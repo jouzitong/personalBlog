@@ -1,0 +1,285 @@
+= {toc-title}
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: Solidity
+:toclevels: 4
+
+[perfer]
+== 前言
+
+- https://docs.soliditylang.org/zh-cn/latest/[官方文档]
+- https://remix.ethereum.org/[Remix 在线开发环境]
+- https://metamask.io/[Metamask 在线钱包]
+- https://archive.trufflesuite.com/[ `Ganache` 私有链模拟器]
+- https://remix-ide.readthedocs.io/zh-cn/latest/remixd.html#ports-usage[Remix 访问您的本地文件系统]
+
+``Solidity``是一种面向合约的、为实现智能合约而创建的高级编程语言，它是以太坊虚拟机（EVM）上的一种中间语言。下面文章主要介绍Solidity的基本语法和使用方法，以及案例分析和实现。
+
+== 概述
+
+``Solidity``是一种静态类型的、编译型的语言，它支持面向对象编程（OOP）的特性。它的语法类似于C++和JavaScript，并且可以与其他智能合约语言（如Vyper）进行互操作。Solidity的主要特点包括：
+
+
+.Solidity 合约通常包含以下几个主要部分：
+. SPDX 许可标识：指定代码的开源许可。
+. pragma 指令：声明 Solidity 版本。
+. 导入语句：引入其他合约或库。
+. 合约声明：使用 contract 关键字。
+. 状态变量：存储在区块链上的持久数据。
+. 事件：用于记录重要操作，可被外部监听。
+. 修饰符：用于修改函数行为的可重用代码。
+. 函数：合约的可执行代码单元。
+
+== 第一程序
+
+.第一个程序
+[source,solidity, lineNumbers]
+----
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.4.16 <0.9.0;
+
+contract SimpleStorage {
+    uint storedData;
+    function set(uint x) public {
+        storedData = x;
+    }
+    function get() public view returns (uint) {
+        return storedData;
+    }
+}
+----
+
+.智能合约开发流程
+image::images/智能合约开发流程.png[智能合约开发流程]
+
+. 新建``.sol``文件, 编写智能合约的功能代码。
+. 使用``Remix``编辑器对代码进行编译。
+. 若编码无错误, 编译器将结果生成一个二进制文件。
+. 将编译成功的智能合约署到区块链系统中。
+. 部署成功后会返回智能合约的地址和二进制接口(`ABI`, *Application Binary Interface*)
+. 通过地址和``ABI``调用智能合约。
+
+=== 编译
+
+==== 编译操作
+
+.**Remix**页面操作编译
+image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程序-编译-操作]
+
+.执行编译有两种方式:
+. 打开``.sol``文件, 点击▶️(绿色的), 进行编译.
+. 点击菜单栏目的``Solidity Compiler``, 选择``Compile xx.sol``, 进行编译.
+
+
+==== 编译结果
+
+在编译成功后, 我们可以查看到编译结果: 在``artifacts``目录下, 生成了一个``.json``文件, 里面包含了编译后的智能合约信息. 其中包括以下内容：
+
+* `ABI`: 这是合约的接口描述，包含所有公共函数、事件和变量的详细信息。它以 JSON 格式表示，通常会在 Remix 编译后的 "Compilation Details" 中看到。你可以手动保存并导出这个 ABI，或者将其用于与合约交互。
+* `Bytecode(字节码)`: 这是合约的编译后的二进制代码，它是实际部署到区块链上的内容。与 ABI 一样，它在 "Compilation Details" 中也会显示。
+* `Deployment Bytecode`: 这是合约的部署字节码，可能略有不同于普通的字节码，因为它包含了合约部署所需的初始化代码。
+
+
+
+.思考
+. *编译后不会自动生成 .json 文件*. 这句话怎么理解?
+. 编译后为什么生成 `json` 文件? 是由谁生成的？
+. 编译后产生的 `json` 文件, 里面都有哪些信息? 都有什么作用?
+. 编译后, 似乎还有其他的 *json文件*, 这些文件都有什么作用?
+
+=== 部署
+
+在编译成功后, 我们可以将编译好的代码, 部署到区块链上
+
+.部署操作
+image::images/solidity/Solidity-第一个程序-编译-部署.png[]
+
+image::images/solidity/Solidity-第一个程序-部署结果.png[]
+
+按照上面的步骤, 我们可以将编译好的代码, 部署到区块链上. 我们可以直接看到该代码定义的方法, 以及方法的参数和属性.
+
+=== 调用
+
+== 基础
+
+.基本定义
+``Solidity``意义上的合约是代码（其 函数）和数据（其 状态）的集合， 驻留在以太坊区块链的一个特定地址。 这一行 `uint storedData;` 声明了一个名为 `storedData` 的状态变量， 类型为 `uint` （ `unsigned` `integer`，共 256 位）。 您可以把它看作是数据库中的一个槽，您可以通过调用管理数据库的代码函数来查询和改变它。 在这个例子中，合约定义了可以用来修改或检索变量值的函数 `set` 和 `get`。
+
+在 *Solidity* 中，合约类似于面向对象编程语言中的类。 每个合约中可以包含 <<types,*状态变量*>>， <<function, *函数*>>， <<function-modifier,*函数修饰器*>>， <<event,*事件*>>， <<error,*错误*>>， <<struct,*结构类型*>> 和 <<enum, *枚举类型*>> 的声明，且合约可以从其他合约继承。
+
+还有一些特殊种类的合约，叫做 *库合约* 和 *接口合约*。
+
+[source, solidity]
+----
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.4.0 <0.9.0;
+
+contract Demo{
+    uint public a; // 状态变量
+
+    // 函数
+    function set(uint _a) public {
+        a = _a;
+    }
+
+    // public view: 函数修饰符
+    function get() public view returns (uint) {
+        return a;
+    }
+
+    // 事件
+    event Log(string message);
+
+    // 错误
+    f
+
+}
+
+// 定义在合约之外的辅助函数
+function helper(uint x) pure returns (uint) {
+    return x * 2;
+}
+----
+
+
+[[types]]
+=== 类型
+
+https://docs.soliditylang.org/zh-cn/latest/types.html#value-types[官方文档]
+
+`Solidity` 支持多种数据类型，包括``基础类型``（如 uint、int、bool）、复杂类型（如 struct、enum、数组、映射）以及地址类型 address。了解这些数据类型的特性对于编写高效和安全的合约至关重要。
+
+.值类型
+. `uint`: 无符号整数，``uint256``是默认类型，表示``0``到``2^256-1``的整数。可以使用不同的位宽，如``uint8``、``uint16``等。
+. `int`: 有符号整数，范围为``-2^(n-1)``到``2^(n-1)-1``。
+. `bool`: 布尔类型，只有``true``和``false``两个值。
+. `address`: 20字节的以太坊地址类型，分为``address``和``address payable``（后者可用于接收以太币）。
+. `bytes1` ~ `bytes32`：固定大小字节数组
+
+.引用类型
+. `string`：动态大小的 UTF-8 编码字符串
+. `bytes`：动态大小的字节数组
+. `数组`：如 uint[]（动态大小）或 uint[5]（固定大小）
+. `结构体` (Struct)：自定义的复杂数据类型，例：struct Person { string name; uint age; }
+. `映射` (Mapping)：键值对存储，如 mapping(address => uint)
+
+.注意事项
+- Mapping不支持直接遍历，需结合其他结构记录键值。
+- 动态数组操作（如push）会增加Gas，尽量减少不必要的操作。
+
+.测试代码
+[source, solidity, lineNumbers]
+----
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract IntegerCalculation {
+}
+----
+
+
+.参考资料
+. https://solidity-by-example.org/array/
+. https://solidity-by-example.org/mapping/
+. https://solidity-by-example.org/structs/
+
+==== 整数运算逻辑
+
+.逻辑运算符
+. `and`：逻辑与，``&&``。
+. `or`：逻辑或，``||``。
+. `not`：逻辑非，``!``。
+.比较运算符
+. `==`：等于。
+. `!=`：不等于。
+. `<`：小于。
+. `>`：大于。
+. `<=`：小于等于。
+. `>=`：大于等于。
+. `is`：类型检查，如 ``x is uint``。
+. `as`：类型转换，如 ``uint(x)``。
+.注意事项
+- 比较运算符返回布尔值。
+- 逻辑运算符返回布尔值。
+- 比较运算符和逻辑运算符的优先级与其他语言相同。
+
+.整数溢出和下溢
+- 在 Solidity 0.8.0 版本之前，整数运算不会检查溢出和下溢，可能会导致意外的结果。从 0.8.0 版本开始，默认开启了溢出和下溢检查，当发生溢出或下溢时，会抛出异常。
+
+[source, solidity, lineNumbers]
+----
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract IntegerCalculation {
+    function add(uint8 a, uint8 b) public pure returns (uint8) {
+        return a + b; // 如果结果超出 uint8 范围，会抛出异常
+    }
+
+    function subtract(uint8 a, uint8 b) public pure returns (uint8) {
+        return a - b; // 如果结果为负数，会抛出异常
+    }
+}
+----
+
+.类型转换
+- 不同长度的整型之间可以进行显式类型转换，但需要注意可能会导致数据丢失。
+[source, solidity, lineNumbers]
+----
+uint16 a = 256;
+uint8 b = uint8(a); // 显式转换，数据丢失，b 的值为 0
+----
+- 不同类型的整数可以进行隐式或显式转换。
+[source, solidity, lineNumbers]
+----
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract IntegerConversion {
+    function convert() public pure returns (uint8, int8) {
+        uint16 largeUint = 257;
+        uint8 smallUint = uint8(largeUint); // 数据截断，结果为 1
+        int16 largeInt = -129;
+        int8 smallInt = int8(largeInt); // 数据截断，结果为 127
+        return (smallUint, smallInt);
+    }
+}
+----
+
+===
+
+[[function]]
+=== 函数
+
+[[function-modifier]]
+=== 函数修饰器
+
+[[event]]
+=== 事件
+
+[[error]]
+=== 错误
+
+[[struct]]
+=== 结构体
+
+[[enum]]
+=== 枚举
+
+== 部署环境问题
+
+== 深入学习 Solidity 特性
+
+== 项目实践和测试
+
+== 持续学习和社区参与

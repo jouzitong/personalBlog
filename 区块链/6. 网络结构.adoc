@@ -1,0 +1,22 @@
+= {toc-title}
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: 网络结构
+:toclevels: 4
+
+[perfer]
+== 前言
+
+
+[Appendix-1]
+== 附录
