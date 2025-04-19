@@ -25,6 +25,8 @@
 
 ``Solidity``是一种面向合约的、为实现智能合约而创建的高级编程语言，它是以太坊虚拟机（EVM）上的一种中间语言。下面文章主要介绍Solidity的基本语法和使用方法，以及案例分析和实现。
 
+<<./../1. 区块链技术知识.adoc#Solidity, 本章节>>
+
 == 概述
 
 ``Solidity``是一种静态类型的、编译型的语言，它支持面向对象编程（OOP）的特性。它的语法类似于C++和JavaScript，并且可以与其他智能合约语言（如Vyper）进行互操作。Solidity的主要特点包括：
@@ -40,75 +42,6 @@
 . 修饰符：用于修改函数行为的可重用代码。
 . 函数：合约的可执行代码单元。
 
-== 第一程序
-
-.第一个程序
-[source,solidity, lineNumbers]
-----
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.4.16 <0.9.0;
-
-contract SimpleStorage {
-    uint storedData;
-    function set(uint x) public {
-        storedData = x;
-    }
-    function get() public view returns (uint) {
-        return storedData;
-    }
-}
-----
-
-.智能合约开发流程
-image::images/智能合约开发流程.png[智能合约开发流程]
-
-. 新建``.sol``文件, 编写智能合约的功能代码。
-. 使用``Remix``编辑器对代码进行编译。
-. 若编码无错误, 编译器将结果生成一个二进制文件。
-. 将编译成功的智能合约署到区块链系统中。
-. 部署成功后会返回智能合约的地址和二进制接口(`ABI`, *Application Binary Interface*)
-. 通过地址和``ABI``调用智能合约。
-
-=== 编译
-
-==== 编译操作
-
-.**Remix**页面操作编译
-image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程序-编译-操作]
-
-.执行编译有两种方式:
-. 打开``.sol``文件, 点击▶️(绿色的), 进行编译.
-. 点击菜单栏目的``Solidity Compiler``, 选择``Compile xx.sol``, 进行编译.
-
-
-==== 编译结果
-
-在编译成功后, 我们可以查看到编译结果: 在``artifacts``目录下, 生成了一个``.json``文件, 里面包含了编译后的智能合约信息. 其中包括以下内容：
-
-* `ABI`: 这是合约的接口描述，包含所有公共函数、事件和变量的详细信息。它以 JSON 格式表示，通常会在 Remix 编译后的 "Compilation Details" 中看到。你可以手动保存并导出这个 ABI，或者将其用于与合约交互。
-* `Bytecode(字节码)`: 这是合约的编译后的二进制代码，它是实际部署到区块链上的内容。与 ABI 一样，它在 "Compilation Details" 中也会显示。
-* `Deployment Bytecode`: 这是合约的部署字节码，可能略有不同于普通的字节码，因为它包含了合约部署所需的初始化代码。
-
-
-
-.思考
-. *编译后不会自动生成 .json 文件*. 这句话怎么理解?
-. 编译后为什么生成 `json` 文件? 是由谁生成的？
-. 编译后产生的 `json` 文件, 里面都有哪些信息? 都有什么作用?
-. 编译后, 似乎还有其他的 *json文件*, 这些文件都有什么作用?
-
-=== 部署
-
-在编译成功后, 我们可以将编译好的代码, 部署到区块链上
-
-.部署操作
-image::images/solidity/Solidity-第一个程序-编译-部署.png[]
-
-image::images/solidity/Solidity-第一个程序-部署结果.png[]
-
-按照上面的步骤, 我们可以将编译好的代码, 部署到区块链上. 我们可以直接看到该代码定义的方法, 以及方法的参数和属性.
-
-=== 调用
 
 == 基础
 

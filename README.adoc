@@ -1,0 +1,20 @@
+= 个人博客
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: Solidity
+:toclevels: 4
+
+[perfer]
+== 前言
+
+* https://asciidoctor.org/docs/asciidoc-writers-guide/[官网Adoc文档语法]

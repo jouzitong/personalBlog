@@ -30,8 +30,6 @@ journey skull monster
 rude rural leave
 plunge cargo trial
 
-
-
 == 基础概念
 
 === 区块链概念
@@ -2097,22 +2095,118 @@ else:
 . 实现多节点交易、验证、挖矿功能（暂时不考虑同步问题, 这个问题目前过于复杂）
 ****
 
+[[Solidity]]
 == 智能合约开发实战 -- Solidity
+:tag: Solidity
+
+.智能合约是什么?
+**智能合约是一种在区块链上运行的程序，它可以在满足特定条件后，无需第三方干预地执行合约条款。**
 
 每个**区块链**都有各自的**智能合约**实现方式. 本章将基于当前最主流的**Solidity**语言进行讲解.
 
 .本章学习目标
 * 搭建开发环境
-** 开发第一个智能合约代码
+* 开发第一个智能合约代码
 * 安装**Ganache 本地服务器**
 * **MetaMask 浏览器插件**
 * 案例: 编写一个智能合约代码. 能够结合``Ganache``和``MetaMask``进行不同账户之间转账
 
 === 搭建开发环境
 
+目前主流的开发方式: 在线编译器 *https://remix.ethereum.org/#lang=zh[Remix]*。如果想在本地开发, 可以通过使用**https://remix-ide.readthedocs.io/zh-cn/latest/remixd.html[Remixd工具]**来实现, 将本地的代码实时同步到**Remix**中, 这样就可以在本地开发了。
+
+==== `Remix`
+
+访问地址: https://remix.ethereum.org/#lang=zh
+
+目前``Remix``**在线编译器**是比较主流的方法方式.
+
+.优势
+* 免费, 无需安装
+* 支持日常开发需求
+* 支持智能合约代码编写, 编译, 部署, 测试等功能
+* 可以通过``Remixd``实现本地化开发
+
+==== Remixd
+
+https://remix-ide.readthedocs.io/zh-cn/latest/remixd.html#ports-usage[Remixd]：访问您的本地文件系统
+
+作为一个开发者, 平时最常用的开发方式就是在本地开发、编译、测试. 然后通过``git``上传到远程仓库中. 但是``Solidity``语言开发跟其他的不一样, 本地不好编译和测试(当然之后学习了其他框架之后就可以实现了).
+
+因此为了解决这个问题, 我们引入``Remixd``工具, 可以将本地的代码实时同步到**Remix**中, 这样就可以在本地开发了。
+
+.操作步骤
+. 安装``Remixd``工具
+** 安装命令: `npm install -g @remix-project/remixd`
+. 启动``Remixd``工具
+** 启动命令: `remixd -s ./ --remix-ide https://remix.ethereum.org`
+. `Remix在线编译器` 连接本地 `Remixd` 工具
+** 点击``工作空间操作``, 里面有一个 `Connect Local File` 相关的功能按钮. 然后跟着这个操作即可.
+
+操作完之后, 就可以在本地开发了, 每个更改都会实时同步到 *在线编译器上的*. 接下来我们开发第一个智能合约代码, 并解析每一步操作的意义.
+
+=== 第一个智能合约代码
+
+.第一个智能合约代码
+[soucrce, solidity, lineNumbers]
+----
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.4.16 <0.9.0;
+
+contract SimpleStorage {
+    uint storedData;
+    function set(uint x) public {
+        storedData = x;
+    }
+    function get() public view returns (uint) {
+        return storedData;
+    }
+}
+----
+
+.智能合约开发流程
+image::images/solidity/智能合约开发流程.png[智能合约开发流程]
+
+. 新建``.sol``文件, 编写智能合约的功能代码。
+. 使用``Remix``编辑器对代码进行编译。
+. 若编码无错误, 编译器将结果生成一个二进制文件。
+. 将编译成功的智能合约署到区块链系统中。
+. 部署成功后会返回智能合约的地址和二进制接口(`ABI`, *Application Binary Interface*)
+. 通过地址和``ABI``调用智能合约。
+
+==== 编译
+
+===== 编译操作
+
+.**Remix**页面操作编译
+image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程序-编译-操作]
+
+.执行编译有两种方式:
+. 打开``.sol``文件, 点击▶️(绿色的), 进行编译.
+. 点击菜单栏目的``Solidity Compiler``, 选择``Compile xx.sol``, 进行编译.
+
+===== 编译后的结果
+
+在编译成功后, 我们可以查看到编译结果: 在``artifacts``目录下, 生成了一个``.json``文件, 里面包含了编译后的智能合约信息. 其中包括以下内容：
+
+* `ABI`: 这是合约的接口描述，包含所有公共函数、事件和变量的详细信息。它以 JSON 格式表示，通常会在 Remix 编译后的 "Compilation Details" 中看到。你可以手动保存并导出这个 ABI，或者将其用于与合约交互。
+* `Bytecode(字节码)`: 这是合约的编译后的二进制代码，它是实际部署到区块链上的内容。与 ABI 一样，它在 "Compilation Details" 中也会显示。
+* `Deployment Bytecode`: 这是合约的部署字节码，可能略有不同于普通的字节码，因为它包含了合约部署所需的初始化代码。
 
 
-==== 第一个智能合约代码
+
+.思考
+[NOTE]
+====
+. *编译后不会自动生成 .json 文件*. 这句话怎么理解?
+. 编译后为什么生成 `json` 文件? 是由谁生成的？
+. 编译后产生的 `json` 文件, 里面都有哪些信息? 都有什么作用?
+. 编译后, 似乎还有其他的 *json文件*, 这些文件都有什么作用?
+====
+
+==== 部署
+
+==== 调用
 
 === Ganache
 
@@ -2130,8 +2224,6 @@ else:
 . 开发一个转账功能和余额查询功能
 . 账户以及余额由``Ganache``提供, 并通过``MetaMask``进行操作
 ****
-
-=== 搭建开发环境
 
 == 以太坊只DApp开发实战 -- Truffle
 
