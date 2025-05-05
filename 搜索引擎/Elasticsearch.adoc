@@ -1,0 +1,1068 @@
+= {toc-title}
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: Elasticsearch
+:toclevels: 4
+
+[perfer]
+== 前言
+
+* https://www.mashibing.com/study?courseNo=1099&sectionNo=51381&systemId=1&courseVersionId=1737[从0到1手敲代码实现商城项目
+/ 全文检索引擎-ElasticSearch]
+* https://www.elastic.co/cn/support/matrix#matrix_jvm[ES支持JVM版本]
+* https://www.elastic.co/cn/elasticsearch/[官方网站]
+* https://elasticsearch.cn/explore/[中文社区]
+* https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.10.0-linux-x86_64.tar.gz[`ES 7.10.0` 下载地址]
+
+== 简介
+
+=== ElasticSearch介绍
+
+&emsp;&emsp;ES 是一个开源的高扩展的分布式全文搜索引擎，是整个Elastic Stack技术栈的核心。它可以近乎实时的存储，检索数据；本身扩展性很好，可以扩展到上百台服务器，处理PB级别的数据。
+
+&emsp;&emsp;ElasticSearch的底层是开源库Lucene，但是你没办法直接用Lucene，必须自己写代码去调用它的接口，Elastic是Lucene的封装，提供了REST API的操作接口，开箱即用。天然的跨平台。
+
+&emsp;&emsp;全文检索是我们在实际项目开发中最常见的需求了，而ElasticSearch是目前全文检索引擎的首选，它可以快速的存储，搜索和分析海量的数据，维基百科，GitHub，Stack Overflow都采用了ElasticSearch。
+
+官方网站：https://www.elastic.co/cn/elasticsearch/
+
+中文社区：https://elasticsearch.cn/explore/
+
+=== ElasticSearch用途
+
+. 搜索的数据对象是大量的非结构化的文本数据。
+. 文件记录达到数十万或数百万个甚至更多。
+. 支持大量基于交互式文本的查询。
+. 需求非常灵活的全文搜索查询。
+. 对高度相关的搜索结果的有特殊需求，但是没有可用的关系数据库可以满足。
+. 对不同记录类型，非文本数据操作或安全事务处理的需求相对较少的情况。
+
+=== 基本概念
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/94fe255dec514382954823229fb5deb3.png[image.png]
+
+. *索引*: 索引（indices）在这儿很容易和MySQL数据库中的索引产生混淆，其实是和MySQL数据库中的Databases数据库的概念是一致的。
+. *类型*: 类型（types）是文档的逻辑分区，类似于关系数据库中的表。
+. *文档*: 文档（documents）是可以被索引的基本信息单元，类似于关系数据库中的一行数据。
+. *字段*: 字段（fields）是文档的属性，类似于关系数据库中的列。
+
+=== 倒排索引
+
+&emsp;&emsp;Elasticsearch是通过Lucene的倒排索引技术实现比关系型数据库更快的过滤。特别是它对多条件的过滤支持非常好.
+
+&emsp;&emsp;倒排索引是搜索引擎的核心。搜索引擎的主要目标是在查找发生搜索条件的文档时提供快速搜索。ES中的倒排索引其实就是 lucene 的倒排索引，区别于传统的正向索引，倒排索引会再存储数据时将关键词和数据进行关联，保存到倒排表中，然后查询时，将查询内容进行分词后在倒排表中进行查询，最后匹配数据即可。
+
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/dad53ed6f080419593dc6d5e090b7118.png[image.png]
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/34620b0154a64f03a970a4c360bad35d.png[image.png]
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/692c1c7773ac4c40a1688ac1b13bb961.png[image.png]
+
+具体拆解的案例
+
+|===
+|词 |记录
+
+|红海 |1，2，3，4，5
+|行动 |1，2，3
+|探索 |2，5
+|特别 |3，5
+|记录篇 |4
+|特工 |5
+|===
+
+保存的对应的记录为
+
+____
+
+1-红海行动
+
+2-探索红海行动
+
+3-红海特别行动
+
+4-红海记录篇
+
+5-特工红海特别探索
+
+____
+
+分词：将整句分拆为单词
+
+检索信息：
+
+. 红海特工行动?
+. 红海行动？
+
+== 安装
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/eae1bec6ad04431b9f15327bd75ef343.png[image.png]
+
+=== ES安装包安装
+
+安装包: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.10.0-linux-x86_64.tar.gz[`ES 7.10.0` 下载地址]
+
+详细操作参考: https://blog.csdn.net/Bejpse/article/details/124166464[centos 安装 es7.10详细教程]
+
+测试访问地址: http://localhost:9200/[http://ip:9200/]
+
+[NOTE]
+====
+* 解决外网访问问题: 在``config/elasticsearch.yml``配置文件中增加: ``http.host : 0.0.0.0``
+* 解决指定``jdk``版本问题: 在``bin/elasticsearch``文件中定义: ``export JAVA_HOME=路径; export PATH=$JAVA_HOME/bin:$PATH``变量即可
+====
+
+==== 目录结构
+
+
+|===
+|目录名称| 描述
+
+|bin	| 可执行脚本文件，包括启动elasticsearch服务、插件管理、函数命令等。
+|config	|配置文件目录，如elasticsearch配置、角色配置、jvm配置等。
+|lib	|elasticsearch所依赖的java库。
+|data	|默认的数据存放目录，包含节点、分片、索引、文档的所有数据，生产环境要求必须修改。
+|logs	|默认的日志文件存储路径，生产环境务必修改。
+|modules	|包含所有的Elasticsearch模块，如Cluster、Discovery、Indices等。
+|plugins	|已经安装的插件的目录。
+|jdk/jdk.app|	7.0以后才有，自带的java环境。
+
+|===
+
+=== Docker方式安装 ES
+
+[source,shell]
+----
+# 拉取镜像 ES 7.4.2
+docker pull elasticsearch:7.4.2
+# 创建需要挂载的目录
+mkdir -p /opt/elasticsearch/config
+mkdir -p /opt/elasticsearch/data
+echo "http.host : 0.0.0.0" >> /opt/elasticsearch/config/elasticsearch.yml
+chmod -R 777 /opt/elasticsearch/
+# 启动容器
+docker run --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OPTS="-Xms64m -Xmx128m" -v /opt/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /opt/elasticsearch/data:/usr/share/elasticsearch/data -v /opt/elasticsearch/plugins:/usr/share/elasticsearch/plugins -d elasticsearch:7.4.2
+
+# 进入ES容器中
+docker exec -it elasticsearch /bin/bash
+# 进入config目录
+cd /usr/share/elasticsearch/config
+
+----
+
+.验证方式:
+访问地址: http://192.168.31.31:9200/
+
+如果出现以下信息则表示安装成功
+
+[source, json]
+----
+{
+  "name" : "a1021e64f3c9",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "cKfFRp_nQkS8DxQw7E8lIA",
+  "version" : {
+    "number" : "7.4.2",
+    "build_flavor" : "default",
+    "build_type" : "docker",
+    "build_hash" : "2f90bbf7b93631e52bafb59b3b049cb44ec25e96",
+    "build_date" : "2019-10-28T20:40:44.881551Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.2.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+----
+
+=== Kibana安装(选择性安装)
+
+Kibana: 是ES的可视化工具, 可以通过Kibana对ES中的数据进行可视化展示。
+
+[source,shell]
+----
+# 下载镜像文件
+docker pull kibana:7.4.2
+# 启动容器
+docker run --name kibana -e ELASTICSEARCH_HOSTS=http://192.168.31.31:9200 -p 5601:5601 -d kibana:7.4.2
+
+# 进入ES容器中
+docker exec -it kibana /bin/bash
+# 进入config目录
+cd config
+# 修改kibana.yml配置文件. 将host改成自己的IP
+vi kibana.yml
+# 重启kibana
+docker restart kibana
+----
+
+.验证方式:
+访问地址：http://192.168.56.100:5601
+
+== ES入门
+
+=== `_cat`
+
+|===
+| _cat接口 | 说明
+| `GET /_cat/nodes` | 查看所有节点
+| `GET /_cat/health` | 查看ES健康状况
+| `GET /_cat/master` | 查看主节点
+| `GET /_cat/indices` | 查看所有索引信息
+|===
+
+'''
+
+.查看所有索引信息: `GET /_cat/indices?v`, 查看所有索引信息
+|===
+|字段名 |含义说明
+
+|health |green(集群完整) yellow(单点正常、集群不完整) red(单点不正常)
+|status |是否能使用
+|index |索引名
+|uuid |索引统一编号
+|pri |主节点几个
+|rep |从节点几个
+|docs.count |文档数
+|docs.deleted |文档被删了多少
+|store.size |整体占空间大小
+|pri.store.size |主节点占
+|===
+
+=== 索引操作
+
+索引就相当于我们讲的关系型数据库MySQL中的 database
+
+==== 创建索引
+
+[source, jsonlines]
+----
+PUT /索引名
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  }
+}
+----
+
+参数可选：指定分片及副本，默认分片为3，副本为2。
+
+
+[NOTE]
+====
+问题思考: 分片和副本怎么用的？有什么作用？配置时有什么参考？
+====
+
+==== 查看索引
+
+[source, httprequest]
+----
+### 查看具体的索引信息
+GET /索引名
+### 查看所有的索引信息(不建议使用)
+GET /*
+----
+
+[NOTE]
+====
+注意: ``*``可以替换任意字符
+====
+
+==== 删除索引
+
+[source, httprequest]
+----
+DELETE /索引名称
+----
+
+=== 文档操作
+
+文档相当于数据库中的表结构中的Row记录
+
+==== 创建文档
+
+[source, httprequest]
+----
+PUT /索引名称/类型名/编号
+Content-Type: application/json
+
+{
+  "name": "张三"
+}
+----
+
+
+[NOTE]
+====
+注意: ``PUT``, 提交的id如果不存在就是新增操作，如果存在就是更新操作，id不能为空
+====
+
+==== 查看文档
+
+[source, httprequest]
+----
+GET /索引名称/类型名/编号
+----
+
+|===
+|字段 |含义
+
+|_index | 索引名称
+| _type | 类型名称
+| _id | 记录id
+| _version | 版本号
+| _seq_no | 并发控制字段，每次更新都会+1，用来实现乐观锁
+| _primary_term | 同上，主分片重新分配，如重启，就会发生变化
+| found | 找到结果
+| _source | 真正的数据内容
+|===
+
+===== 文档查询和乐观锁
+
+乐观锁： ?if_seq_no=0&if_primary_term=1
+
+==== 更新文档
+
+[source, httprequest]
+----
+### 更新文档（全量的）
+POST /索引名称/类型名/编号
+Content-Type: application/json
+
+{
+   "name": "李四"
+}
+
+### 更新文档(部分字段更新)
+POST /索引名称/类型名/编号/_update
+Content-Type: application/json
+
+{
+    "doc": {
+        "name": "王五"
+    }
+}
+
+----
+
+[NOTE]
+====
+注意: ``POST``, 如果不提供id会自动生成一个id,如果id存在就更新，如果id不存在就新增
+====
+
+==== 删除文档
+
+[source, httprequest]
+----
+### 删除文档
+DELETE /索引名称/类型名/编号
+
+### 删除索引(从而删除所有的文档, 不建议操作)
+DELETE /索引名称
+----
+
+==== 批量操作: ``_bulk``
+
+.``_bulk``批量操作，语法格式
+[source, httprequest]
+----
+POST /索引名称/类型名/_bulk
+{action:{metadata}}
+{request body }
+{action:{metadata}}
+{request body }
+----
+
+.``metadata``元数据
+
+.复杂的批量操作
+[source, httprequest]
+----
+POST /_bulk
+{action:{metadata}}
+{action:{metadata}}
+{request body }
+----
+
+[NOTE]
+====
+.说明
+. ``action``: 操作类型，包括``index``、``create``、``update``、``delete``
+* ``index``: 新增或更新文档
+* ``create``: 新增文档
+* ``update``: 更新文档
+* ``delete``: 删除文档
+. ``metadata``: 元数据，包括``_index``、``_type``、``_id``、``_version``、``_routing``、``_parent``、``_timestamp``、``_ttl``、``_source``等
+* ``_index``: 索引名称. 如果这里写了索引名称，那么请求路径中的索引名称就可以省略. 相当于``POST /_bulk``.
+* ``_id``: 文档id, 指定需要操作的文档id
+* TODO 其他属性
+. ``request body``: 请求体，包括文档内容. 例如: ``action=``create``, 那么``request body``就是文档内容
+====
+
+=== 数据类型
+
+.常见的数据类型
+. 字符串: text (在elaticsearch 2.x版本中，为string类型)
+. 整数 : byte, short, integer, long
+. 浮点数: float, double
+. 布尔型: boolean
+. 日期: date
+. `keyword`: 关键字类型. 与``text``区别在于这个不会被分词
+
+== ES进阶
+
+* 官方文档: https://www.elastic.co/guide/en/elasticsearch/reference/7.4/getting-started-search.html
+* 测试数据文档: 当前目录下的``accounts.json``文件. 可以在ES平台上直接执行
+
+=== ES中的检索方式
+
+.在ElasticSearch中支持两种检索方式
+. 通过使用REST request URL 发送检索参数(uri+检索参数)
+. 通过使用 REST request body 来发送检索参数 (uri+请求体)
+
+.响应结果信息
+|===
+|信息 |描述
+
+|took |ElasticSearch执行搜索的时间(毫秒)
+|time_out |搜索是否超时
+|_shards | 有多少个分片被搜索了，统计成功/失败的搜索分片
+| hits | 搜索结果
+| hits.total | 搜索结果统计
+| hits.hits | 实际的搜索结果数组(默认为前10条文档)
+| sort | 结果的排序key，没有就按照score排序
+| score和max_score | 相关性得分和最高分(全文检索使用)
+|===
+
+
+==== url参数拼接(不推荐)
+
+[source, httprequest]
+----
+# 检索bank下的所有信息，包括 type 和 docs
+GET bank/_search
+
+# 检索bank下的所有信息，只返回docs
+GET bank/_search?q=*&sort=account_number:asc
+----
+
+===== request body
+
+通过使用 REST request body 来反射检索参数 (uri+请求体)
+
+[source, httprequest]
+----
+GET /索引名/_search
+{
+   "query":{
+       "match_all":{}
+    },
+    "sort":[
+       {
+           "account_number":"desc"
+       }
+   ]
+}
+----
+
+[NOTE]
+====
+.注意:
+. ``query``下的``match_all``, 表示匹配所有的数据.
+. ``sort``, 表示对数据进行排序. 也可以表示为``{"sort": [""account_number": {"order": "desc"}]}``
+====
+
+=== Query DSL
+
+.基本语法
+&nbsp;&nbsp;ElasticSearch提供了一个可以执行的JSON风格的DSL(domain-specific language 领域特定语言)，这个被称为Query DSL，该查询语言非常全面，并且刚开始的时候感觉有点复杂，真正学好它的方法就是从一些基础案例开始的。
+
+.如果是针对某个字段，那么它的结构为
+[source, json5]
+----
+{
+    "query": {
+        QUERY_TYPE:{
+            FIELD_NAME:{
+                "ARGUMENT":"VALUE",
+                "ARGUMENT2":"VALUE"
+            }
+        }
+    },
+    "sort": {
+        "FIELD_NAME": "desc|asc"
+    },
+    "from": 0,
+    "size": 10,
+    "_source": ["FIELD_NAME1", "FIELD_NAME2"]
+}
+----
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    {
+      "account_number": "asc"
+    },
+    {
+      "balance": {
+        "order": "desc"
+      }
+    }
+  ],
+  "from": 0,
+  "size": 20,
+  "_source": ["account_number", "balance"]
+}
+----
+====
+
+.查询类型
+. ``match_all``: 匹配所有数据
+. ``match``: 匹配指定字段的数据. 如果是字符串, 则是全文检索, 只要这个字段含有这个字符串就会被检索出来.
+. ``match_phrase``: 将需要匹配的值当成一个整体单词(不分词)进行检索，短语匹配
+. ``multi_match``: 多字段匹配
+. `bool`: 复合查询. 通过``must``、``should``、``must_not``、``filter``等关键字进行组合查询
+. `filter`:
+. `term`: 精确匹配
+
+.排序
+. `desc`: 逆序
+. `asc`: 顺序
+
+.分页
+. `from`: 从哪开始
+. `size`: 查多少条数据
+
+.返回字段
+. `_source`: 返回指定字段
+
+==== `match`
+
+.特点: 全文检索、分词
+. `全文检索`: 全文检测, 包含存在的字符就算匹配成功. 例如: 搜索``"mill"``, 只要包含``"mill"``的字段就会被检索出来.
+. `分词`: 对字段值进行分词. 会对字段进行分词，然后进行检索. 例如: "mill road"，会被分词为"mill"和"road"，然后检索这两个词, 只要包含这两个词就会匹配成功
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query":{
+    "match":{
+      "address": {
+        "query": "Holmes Lane"
+      }
+    }
+  },
+  "sort": [
+    {
+      "account_number": {
+        "order": "asc"
+      }
+    }
+  ],
+  "from": 0,
+  "size": 20
+}
+----
+====
+
+==== `match_phrase`
+
+.特点: 短语匹配, 也可以理解为这个种方式, 不会对字段进行分词
+. 例如, 搜索``"mill road"``, 只有包含``"mill road"``的字段才会被检索出来
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+   "query":{
+       "match_phrase":{
+          "address":"mill road"
+      }
+   }
+}
+----
+====
+
+==== `multi_match`
+
+.特点: 一个值匹配, 可以匹配多个字段. 注意这个词先分词, 然后进行多字段全文搜索
+. 例如, 搜索``mill road``, 根据``address``和``state``字段进行搜索, 只要一个命中了就算匹配成功
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+   "query":{
+       "multi_match":{
+          "query":"mill road",
+          "fields":["address","state"]
+      }
+   }
+}
+----
+====
+
+==== `bool(复合查询)`
+
+布尔查询又叫组合查询，bool用来实现复合查询，
+
+``bool``把各种其它查询通过 `must`（与）、`must_not`（非）、`should`（或）的方式进行组合
+
+复合语句可以合并任何其他查询语句，包括复合语句也可以合并，了解这一点很重要，这意味着，复合语句之间可以相互嵌套，可以表达非常复杂的逻辑。
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "address": {
+              "query": "Nassau Avenue"
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "age": 20
+          }
+        }
+      ],
+      "should": [
+        {
+          "match": {
+            "state": "AK"
+          }
+        }
+      ]
+    }
+  },
+  "sort": {
+    "_score": "desc"
+  },
+  "from": 0,
+  "size": 100
+}
+----
+====
+
+==== `filter(结果过滤)`
+
+&nbsp;&nbsp;并不是所有的查询都需要产生分数，特别是那些仅用于"filtering"的文档，为了不计算分数，ElasticSearch会自动检查场景并且优化查询的执行.
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "range": {
+          "balance": {
+            "gte": 20000,
+            "lte": 30000
+          }
+        }
+      }
+    }
+  }
+}
+----
+====
+
+==== `term`
+
+特点::
+和``match``一样，匹配某个属性的值，全文检索字段用``match``，其他非``text``字段匹配用``term``
+
+[%collapsible, title="使用案例"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "term": {
+      "age": {
+        "value": 20
+      }
+    }
+  }
+}
+----
+====
+
+==== 总结
+
+.查询类型总结
+|===
+| 序号 | 检索关键字 | 描述
+| 1 | `match` | ``text``类型数据的匹配(分词-全文检索)
+| 2 | `match_phrase` | 短语查询; 全文匹配
+| 3 | `multi_match` |
+| 4 | `bool` | 复合查询.
+|  | `match keyword` | 在属性字段后加.keyword 实现精确查询-不分词
+
+|===
+
+=== 聚合(aggregations)
+
+官方文档参考: https://www.elastic.co/guide/en/elasticsearch/reference/7.10/search-aggregations.html[聚合参考文档]
+
+.聚合可以让我们极其方便的实现对数据的统计、分析。例如：
+* 什么品牌的手机最受欢迎？
+* 这些手机的平均价格、最高价格、最低价格？
+* 这些手机每月的销售情况如何？
+
+实现这些统计功能的比数据库的sql要方便的多，而且查询速度非常快，可以实现实时搜索效果。
+
+.语法规则
+[source, json]
+----
+{
+"aggregations" : {
+    "<aggregation_name>" : {
+        "<aggregation_type>" : {
+            <aggregation_body>
+        }
+        [,"meta" : {  [<meta_data_body>] } ]?
+        [,"aggregations" : { [<sub_aggregation>]+ } ]?
+    }
+    [,"<aggregation_name_2>" : { ... } ]*
+}
+}
+----
+
+==== 基本概念
+
+Elasticsearch中的聚合，包含多种类型，最常用的两种，一个叫``桶``，一个叫``度量``. 还有一个``管道``
+
+桶（bucket）:: 桶的作用，是按照某种方式对数据进行分组，每一组数据在ES中称为一个 桶，例如我们根据国籍对人划分，可以得到 中国桶、英国桶，日本桶……或者我们按照年龄段对人进行划分：010,1020,2030,3040等。
+度量（metrics）:: 分组完成以后，我们一般会对组中的数据进行聚合运算，例如求平均值、最大、最小、求和等，这些在ES中称为 度量
+管道(piple):: 从其他聚合而不是文档或字段获取输入。
+
+==== 桶(bucket)
+
+.Elasticsearch中提供的划分桶的方式有很多：
+* Date Histogram Aggregation：根据日期阶梯分组，例如给定阶梯为周，会自动每周分为一组
+* Histogram Aggregation：根据数值阶梯分组，与日期类似
+* Terms Aggregation：根据词条内容分组，词条内容完全匹配的为一组
+* Range Aggregation：数值和日期的范围分组，指定开始和结束，然后按段分组
+* ……
+
+bucket aggregations 只负责对数据进行分组，并不进行计算，因此往往bucket中往往会嵌套另一种聚合：metrics aggregations即度量
+
+'''
+
+[%collapsible, title="*使用案例1: 搜索address中包含mill的所有人的年龄分布以及平均年龄*"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "match": {
+      "address": "mill Road"
+    }
+  },
+  "aggs": {
+    "ageAgg": { // 组名, 响应值中对应的key
+      "terms": { // 根据年龄分组
+        "field": "age",
+        "size": 4 // 统计前4个年龄段
+      }
+    },
+    "ageAvg":{ // 组名, 响应值中对应的key
+      "avg": { // 求平均值
+        "field": "age"
+      }
+    }
+  },"size": 0 // 展示命中的具体数据条数. 0 表示只展示聚合结果
+}
+----
+====
+
+[%collapsible, title="*使用案例2: 按照年龄聚合，并且请求这些年龄段的这些人的平均薪资*"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "aggs": {
+    "ageAgg": {
+      "terms": {
+        "field": "age",
+        "size": 40
+      },
+      "aggs": {
+        "balance_agv": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+----
+====
+
+[%collapsible, title="*案例3：查出所有年龄分布，并且这些年龄段中M的平均薪资和F的平均薪资以及这个年龄段的总体平均薪资*"]
+====
+[source, jsonlines]
+----
+GET account/_search
+{
+  "query": {
+    "match_all": {
+    }
+  },
+  "aggs": {
+    "ageAgg": {
+      "terms": {
+        "field": "age",
+        "size": 3
+      },
+      "aggs": {
+        "genderAgg": {
+          "terms": {
+            "field": "gender.keyword"
+          },
+          "aggs": {
+            "balance_agv": {
+              "avg": {
+                "field": "balance"
+              }
+            }
+          }
+        },
+        "age_balance_agv": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+----
+====
+
+'''
+
+==== 度量(metrics)
+
+.比较常用的一些度量聚合方式：
+* Avg Aggregation：求平均值
+* Max Aggregation：求最大值
+* Min Aggregation：求最小值
+* Percentiles Aggregation：求百分比
+* Stats Aggregation：同时返回avg、max、min、sum、count等
+* Sum Aggregation：求和
+* Top hits Aggregation：求前几
+* Value Count Aggregation：求总数
+* ……
+
+== 映射配置(_mapping)
+
+什么是映射::
+映射是定义文档的过程，文档包含哪些字段，这些字段是否保存，是否索引，是否分词等
+
+.查看索引库中所有的属性的_mapping
+image::https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/a4dc54534e944bc485928965d92a5cb5.png[]
+
+
+=== ElasticSearch7-去掉type概念
+
+&emsp;&emsp;关系型数据库中两个数据表示是独立的，即使他们里面有相同名称的列也不影响使用，但ES中不是这样的。elasticsearch是基于Lucene开发的搜索引擎，而ES中不同type下名称相同的filed最终在Lucene中的处理方式是一样的。
+
+&emsp;&emsp;两个不同type下的两个user_name，在ES同一个索引下其实被认为是同一个filed，你必须在两个不同的type中定义相同的filed映射。否则，不同type中的相同字段名称就会在处理中出现冲突的情况，导致Lucene处理效率下降。
+
+&emsp;&emsp;去掉type就是为了提高ES处理数据的效率。
+
+*Elasticsearch 7.x*:: URL中的type参数为可选。比如，索引一个文档不再要求提供文档类型。
+
+*Elasticsearch 8.x*:: 不再支持URL中的type参数。
+
+解决：将索引从多类型迁移到单类型，每种类型文档一个独立索引
+
+=== 数据类型
+
+=== 操作映射字段
+
+.创建映射字段
+[source, jsonlines]
+----
+PUT /索引库名/_mapping/类型名称
+{
+  "properties": {
+    "字段名": {
+      "type": "类型",
+      "index": true,
+      "store": true,
+      "analyzer": "分词器"
+    }
+  }
+}
+----
+
+. 类型名称：就是前面将的type的概念，类似于数据库中的不同表
+. 字段名：类似于列名，properties下可以指定许多字段。
+. 每个字段可以有很多属性。例如：
+* type：类型，可以是text、long、short、date、integer、object等
+* index：是否索引，默认为true
+* store：是否存储，默认为false
+* analyzer：分词器，这里使用ik分词器：ik_max_word`或者`ik_smart
+
+.新增映射字段
+[source, jsonlines]
+----
+PUT /my_index/_mapping
+{
+  "properties":{
+    "employee-id":{
+      "type":"keyword"
+      , "index":false
+    }
+  }
+}
+----
+
+.更新映射字段
+对于存在的映射字段，我们不能更新，更新必须创建新的索引进行数据迁移
+
+.删除映射字段
+[source, jsonlines]
+----
+DELETE /my_index/_mapping
+
+----
+
+=== 数据迁移
+
+.先创建出正确的索引，然后使用如下的方式来进行数据的迁移
+[source,jsonlines]
+----
+POST _reindex
+{
+    "source":{
+      "index":"twitter"
+    }
+    , "dest":{
+      "index":"new_twitter"
+    }
+}
+----
+
+.老的数据有type的情况
+[source, jsonlines]
+----
+POST _reindex
+{
+  "source":{
+      "index":"twitter",
+      "type":"account"
+  },
+  "dest":{
+    "index":"new_twitter"
+  }
+}
+----
+
+== 分词
+
+&emsp;&emsp;所谓的分词就是通过tokenizer(分词器)将一个字符串拆分为多个独立的tokens(词元-独立的单词)，然后输出为tokens流的过程。
+
+例如"my name is HanMeiMei"这样一个字符串就会被默认的分词器拆分为[my,name,is HanMeiMei].ElasticSearch中提供了很多默认的分词器，我们可以来演示看看效果
+
+.查看分词效果
+[source, jsonlines]
+----
+POST _analyze
+{
+  "analyzer": "standard",         // 指定分词器
+  "text": "my name is HanMeiMei"  // 需要分词的内容
+}
+----
+
+=== 安装中文分词器（ik）
+
+https://github.com/medcl/elasticsearch-analysis-ik 下载对应的版本，然后解压缩到plugins目录中
+
+.验证方式
+[source, httprequest]
+----
+GET /_cat/plugins?v
+----
+
+=== 自定义词库
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/ec8f201567ff4b27bbe761ad47041064.png[image.png]
+
+image:https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/1462/1644651801000/c64f13244a4b4f1f816a21cd33a4e70a.png[image.png]
+
+然后保存文件重启ElasticSearch服务即可
+
+== ES应用(Java API)
+
+官网API参考文档::
+* https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.10/java-rest-high.html[7.10.0 java API文档]
+* https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/getting-started-java.html[8.13.0 java API 文档]
+
+
+
+== ES 深度理解
+
+
+== 常见面试
+
+. 基本数据类型
+
+
+.https://www.cnblogs.com/souyunku/p/15635460.html[参考地址]
+. 详细描述一下Elasticsearch搜索的过程？
+. Beats 如何与 Elasticsearch 结合使用
+. 解释一下 Elasticsearch 的 分片？
+. 精准匹配检索和全文检索匹配检索的不同？
+

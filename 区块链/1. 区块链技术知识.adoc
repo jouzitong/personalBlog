@@ -8,7 +8,7 @@
 :icons: font
 :toc: left
 :toc-title: 区块链技术知识
-:toclevels: 3
+:toclevels: 2
 :source-highlighter: coderay
 :sectnums:
 :sectlinks:
@@ -2097,7 +2097,6 @@ else:
 
 [[Solidity]]
 == 智能合约开发实战 -- Solidity
-:tag: Solidity
 
 .智能合约是什么?
 **智能合约是一种在区块链上运行的程序，它可以在满足特定条件后，无需第三方干预地执行合约条款。**
@@ -2193,8 +2192,6 @@ image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程�
 * `Bytecode(字节码)`: 这是合约的编译后的二进制代码，它是实际部署到区块链上的内容。与 ABI 一样，它在 "Compilation Details" 中也会显示。
 * `Deployment Bytecode`: 这是合约的部署字节码，可能略有不同于普通的字节码，因为它包含了合约部署所需的初始化代码。
 
-
-
 .思考
 [NOTE]
 ====
@@ -2206,14 +2203,45 @@ image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程�
 
 ==== 部署
 
-==== 调用
+.部署操作
+image::images/solidity/Solidity-第一个程序-编译-部署.png[]
+
+按照上面的步骤操作, 就可以实现部署了. 部署成功后, 会返回智能合约的地址和二进制接口(`ABI`, *Application Binary Interface*). 你可以通过该地址操作智能合约(本质就是调用智能合约的方法).
+
+image::images/solidity/Solidity-第一个程序-部署结果.png[]
+
+.思考
+[NOTE]
+====
+. 为什么会返回几个按钮操作呢? 在实际开发过程中, 又不可能让你点击按钮？(按钮本质是**ABI接口**)
+. 部署成功后, 好像生成了一个``scenario.json``文件, 这个文件有什么作用?
+. 为什么部署后会返回智能合约的地址和二进制接口(`ABI`)?
+====
 
 === Ganache
 
+* https://archive.trufflesuite.com/[Ganache 官网]
+** 在官网搜索 *Ganache*, 就可以找到下载链接. 下载安装即可.
+
+==== Ganache 介绍
+
+.快速开始
+安装完成后打开软件就可以看到如下界面:
+
+image::images/ganache/Ganache1.png[]
+
+当然那个工作空间, 第一次进来的时候是空的, 可以通过点击``QUICKSTART``按钮, 快速创建一个工作空间.
+
+
+
+.工作空间
+image::images/ganache/Ganache-工作空间.png[]
+
+.工作空间
+* *Account账户*: 是一个虚拟的账户, 用于测试智能合约.
+
 === MetaMask
 
-* https://archive.trufflesuite.com/[Ganache 官网]
-** 主要是搭建一个本地开发环境
 * https://metamask.io/[MetaMask 官网]
 ** 主要是安装一个浏览器插件, 用于连接本地开发环境. 管理账户余额、交易等操作(添加账户管理的时候可能需要关闭代理)
 
@@ -2248,8 +2276,6 @@ image::images/solidity/Solidity-第一个程序-编译-操作.png[第一个程�
 npm install -g ganache-cli
 ----
 
-
-
 .安装命令
 [source,shell]
 ----
@@ -2268,6 +2294,13 @@ truffle init
 
 === `Truffle` 框架
 
+== 超级账本 -- 基于 Go
+
+== Libra 区块链 -- 基于 Move
+
+== 区块链即服务平台（Baas）
+
+== 区块链综合应用开发实战
 
 [Appendix]
 == 附录

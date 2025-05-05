@@ -9,10 +9,10 @@
 :source-highlighter: coderay
 :sectnums:
 :sectlinks:
-:sectnumlevels: 4
+:toclevels: 3
+:sectnumlevels: 2
 :toc: left
 :toc-title: Solidity
-:toclevels: 4
 
 [perfer]
 == 前言
@@ -23,14 +23,11 @@
 - https://archive.trufflesuite.com/[ `Ganache` 私有链模拟器]
 - https://remix-ide.readthedocs.io/zh-cn/latest/remixd.html#ports-usage[Remix 访问您的本地文件系统]
 
-``Solidity``是一种面向合约的、为实现智能合约而创建的高级编程语言，它是以太坊虚拟机（EVM）上的一种中间语言。下面文章主要介绍Solidity的基本语法和使用方法，以及案例分析和实现。
-
-<<./../1. 区块链技术知识.adoc#Solidity, 本章节>>
+``Solidity``是一种面向合约的、为实现智能合约而创建的高级编程语言，它是以太坊虚拟机（EVM）上的一种中间语言。下面文章主要介绍Solidity的**基本语法**和**使用方法**，以及案例分析和实现。
 
 == 概述
 
 ``Solidity``是一种静态类型的、编译型的语言，它支持面向对象编程（OOP）的特性。它的语法类似于C++和JavaScript，并且可以与其他智能合约语言（如Vyper）进行互操作。Solidity的主要特点包括：
-
 
 .Solidity 合约通常包含以下几个主要部分：
 . SPDX 许可标识：指定代码的开源许可。
@@ -42,8 +39,13 @@
 . 修饰符：用于修改函数行为的可重用代码。
 . 函数：合约的可执行代码单元。
 
-
 == 基础
+
+.本章学习目标
+* 了解``Solidity``的基本语法
+* 了解开发常用的**函数**
+
+如果你是第一次接触Solidity, 建议先阅读<<./../1. 区块链技术知识.adoc#Solidity, 本章节>>内容, 该章节主要解释了Solidity的**基本概念**和环境**搭建**。
 
 .基本定义
 ``Solidity``意义上的合约是代码（其 函数）和数据（其 状态）的集合， 驻留在以太坊区块链的一个特定地址。 这一行 `uint storedData;` 声明了一个名为 `storedData` 的状态变量， 类型为 `uint` （ `unsigned` `integer`，共 256 位）。 您可以把它看作是数据库中的一个槽，您可以通过调用管理数据库的代码函数来查询和改变它。 在这个例子中，合约定义了可以用来修改或检索变量值的函数 `set` 和 `get`。
@@ -58,23 +60,18 @@
 pragma solidity >=0.4.0 <0.9.0;
 
 contract Demo{
-    uint public a; // 状态变量
 
-    // 函数
-    function set(uint _a) public {
-        a = _a;
+    constructor() {
+        a = 1;
     }
 
+    uint public a; // 状态变量
+
     // public view: 函数修饰符
-    function get() public view returns (uint) {
+    function get(uint x) public view returns (uint) {
         return a;
     }
 
-    // 事件
-    event Log(string message);
-
-    // 错误
-    f
 
 }
 
@@ -84,6 +81,26 @@ function helper(uint x) pure returns (uint) {
 }
 ----
 
+.代码解释
+. `SPDX 许可标识符`: `SPDX-License-Identifier: GPL-3.0` 用于指定代码的开源许可。
+. 版本编译指示: `pragma solidity ^0.8.0;` 声明了代码使用的 Solidity 版本。
+. 合约定义: `contract Demo` 定义了一个名为 `Demo` 的合约。
+. 状态变量: `uint public a;`
+ ** 定义了一个名为 `a` 的**状态变量**，
+ ** 类型为 `uint`;
+ ** 修饰符 `public` 表示该变量可以被外部访问。
+ . 函数: `function get(uint x) public view returns (uint)`
+ ** `function`: 函数声明关键字。
+ ** `get`: 函数名称。符合 `Solidity` 命名规则, 一般采用驼峰命名法
+ ** `uint x`: 函数参数. 可以定义 *n* 个参数(`n>=0`)
+ ** `return`: 返回类型为 `uint`.
+ ** 修饰符 `public view` 表示该函数不会修改状态变量。
+
+[spdx]
+=== SPDX 许可标识符
+
+[pragma]
+=== 版本编译指示
 
 [[types]]
 === 类型
@@ -111,15 +128,19 @@ https://docs.soliditylang.org/zh-cn/latest/types.html#value-types[官方文档]
 - 动态数组操作（如push）会增加Gas，尽量减少不必要的操作。
 
 .测试代码
+[%collapsible]
+====
 [source, solidity, lineNumbers]
 ----
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 contract IntegerCalculation {
+    uint public a;
+
 }
 ----
-
+====
 
 .参考资料
 . https://solidity-by-example.org/array/
@@ -149,6 +170,12 @@ contract IntegerCalculation {
 .整数溢出和下溢
 - 在 Solidity 0.8.0 版本之前，整数运算不会检查溢出和下溢，可能会导致意外的结果。从 0.8.0 版本开始，默认开启了溢出和下溢检查，当发生溢出或下溢时，会抛出异常。
 
+.案例需求
+====
+* 编写一个智能合约，实现两个整数的加法和减法。
+====
+
+.示例代码
 [source, solidity, lineNumbers]
 ----
 // SPDX-License-Identifier: MIT
@@ -189,13 +216,96 @@ contract IntegerConversion {
 }
 ----
 
-===
+[[type-address]]
+==== address
+
+官网参考: https://docs.soliditylang.org/zh-cn/latest/types.html#address[地址类型]
+
+
+.地址类型
+. `address`：20字节的以太坊地址类型，用于标识合约或外部账户。
+. `address payable`：可支付的地址类型，用于接收以太币. 还有额外的函数，如 `transfer` 和 `send`。
+. `address(this)`：当前合约地址。
+
+.案例需求
+====
+* 编写一个智能合约，接收以太币并将其发送给指定地址。
+====
+
+.示例代码
+[%collapsible]
+====
+[source, solidity, lineNumbers]
+----
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+----
+====
+
+[[type-string]]
+==== string
+
+[[type-bytes]]
+==== bytes类型
+
+[[type-mapping]]
+==== mapping类型
+
+[[type-enum]]
+==== 枚举类型
 
 [[function]]
 === 函数
 
+在 `Solidity` 中，``函数定义``是编写合约的核心组成部分，函数用于实现合约的各种功能，例如**存储**和**处理数据**、与**外部进行交互**、**执行特定操作**等。函数定义指定了合约的行为，包括**函数名称**、*输入参数*、*返回值*、**访问控制**以及**执行的功能**逻辑。
+
+==== 基本机构
+
+.函数定义的基本结构
+* *函数修饰符*（Modifier）：函数的属性或行为，指定该函数的访问控制、是否能够修改合约状态等。
+* *函数名称*: 函数的标识符，用来调用这个函数。
+* *输入参数*（Optional）: 函数所接收的参数，用于处理传入的值。
+* *返回值*（Optional）: 函数的输出，返回调用者一个值。
+* *函数体*：函数内部的逻辑代码。
+
+.基本语法
+[source, solidity, lineNumbers]
+----
+function functionName(parameter1, parameter2, ...) public returns (returnType) {
+    // 函数体
+}
+----
+
 [[function-modifier]]
 === 函数修饰器
+
+更详细的解释应该查看官网文档: https://docs.soliditylang.org/zh-cn/latest/contracts.html#getter[可见性和 getter 函数]
+
+* 函数修饰器是一种特殊的函数，用于修改其他函数的行为。**状态变量**和**函数修饰器**使用范围不同.
+
+.*状态变量* 修饰符
+. `public`: 公共状态变量，可以被外部读取。
+. `internal`: 内部状态变量，只能在合约内部读取。
+. `private`: 私有状态变量，只能在合约内部读取。
+
+
+
+.常见的修饰符号
+* `public`: 公共函数，可以被外部调用。
+* `internal`: 内部函数，只能在合约内部调用。
+* `private`: 私有函数，只能在合约内部调用。
+* `external`: 外部函数，可以被外部调用。
+* `view`: 只读函数，不会修改合约状态。
+* `pure`: 纯函数，不会修改合约状态，也不会读取合约状态。
+* `payable`: 可以接受以太币的函数。
+
+.思考问题
+[NOTE]
+====
+. `view` 和 `pure` 的区别是什么？怎么去理解其中的含义? <<function-modifier-note1, 答案>>
+. *合约状态* 是什么？<<function-modifier-note2, 答案>>
+====
 
 [[event]]
 === 事件
@@ -211,8 +321,36 @@ contract IntegerConversion {
 
 == 部署环境问题
 
+=== Ganache
+
+=== Metamask
+
+=== IPFS
+
+=== Remixd
+
 == 深入学习 Solidity 特性
 
 == 项目实践和测试
 
 == 持续学习和社区参与
+
+[Appendix]
+== 附录: 思考问题回答
+
+[[function-modifier-note1]]
+.`view` 和 `pure` 的区别是什么？怎么去理解其中的含义?
+[NOTE]
+====
+. xx
+====
+
+[[function-modifier-note2]]
+.*合约状态* 是什么？
+----
+
+----
+
+[Appendix]
+== 附录: 参考资料
+

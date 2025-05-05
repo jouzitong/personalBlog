@@ -18,3 +18,12 @@
 == 前言
 
 * https://asciidoctor.org/docs/asciidoc-writers-guide/[官网Adoc文档语法]
+
+[Appendix]
+== 附Adoc常用语法录
+
+引用其他文档的内容链接: <<./区块链/1. 区块链技术知识.adoc#Solidity, 本章节>>
+
+[%collapsible, title=折叠标题]
+====
+====
