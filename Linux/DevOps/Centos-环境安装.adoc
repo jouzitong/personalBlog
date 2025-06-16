@@ -1,0 +1,727 @@
+= {toc-title}
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: Centos 7.9 运维
+:toclevels: 4
+
+
+== centos 7.9 安装
+
+=== 自己的win电脑安装centos7.9:
+
+. U盘启动系统
+. 选择安装centos7.9
+. 参考地址: https://blog.csdn.net/tladagio/article/details/126949743[https://blog.csdn.net/tladagio/article/details/126949743]
+
+sda1
+
+== 基础环境安装
+
+[%collapsible, title="安装脚本"]
+====
+[source, shell]
+----
+#!/bin/bash
+# 安装Docker
+sudo yum install -y docker
+# 设置开机启动
+systemctl enable docker
+# 启动Docker
+systemctl start docker
+
+# 配置阿里云镜像加速器
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://hvic6rha.mirror.aliyuncs.com"]
+}
+EOF
+
+# 重启Docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 拉去mysql镜像并启动 mysql（5.7）, 并设置开机启动
+docker run -p 3306:3306 --name mysql5 -e MYSQL_ROOT_PASSWORD=root -d mysql:5.7
+
+# Docker 安装 redis
+docker run -p 6379:6379 --name redis -v /home/redis/data:/data -d redis:latest redis-server --appendonly yes --restart=always
+# 安装rocketmq 最新版本
+docker run -d -p 9876:9876 --name rmqnamesrv -v /home/rocketmq/namesrv/logs:/root/logs -v /home/rocketmq/namesrv/store:/root/store apache/rocketmq-namesrv:latest sh mqnamesrv
+docker run -d -p 10911:10911 -p 10909:10909 --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -v /home/rocketmq/broker/logs:/root/logs -v /home/rocketmq/broker/store:/root/store apache/rocketmq-broker:latest sh mqbroker -c /opt/rocketmq/conf/2m-noslave/broker.conf
+
+# 安装jdk8
+yum install -y java-1.8.0-openjdk*
+
+# 安装maven
+wget https://dlcdn.apache.org/maven/maven-3/3.8.1/source/apache-maven-3.8.1-src.tar.gz -P /usr/local/src
+cd /usr/local/src
+tar -zxvf apache-maven-3.8.1-src.tar.gz
+mv apache-maven-3.8.1 /usr/local/maven
+echo "export M2_HOME=/usr/local/maven" >> /etc/profile
+echo "export PATH=\$PATH:\$M2_HOME/bin" >> /etc/profile
+source /etc/profile
+
+cd /usr/local
+# 下载安装 nacos 1.2.1
+wget https://github.com/alibaba/nacos/releases/download/1.2.1/nacos-server-1.2.1.tar.gz
+tar -zxvf nacos-server-1.2.1.tar.gz
+
+# 下载安装 seata 1.4.2
+
+----
+====
+
+=== 安装git
+
+[source, shell]
+----
+yum install -y git
+----
+
+[TIP]
+====
+.优点
+* 方便快捷
+
+.缺点:
+* 下载的版本可能比较低
+====
+
+.本地配置SSH
+[source, shell]
+----
+# 1. 删除旧的密钥文件
+rm -rf .ssh/id_rs.*
+# 2. 生成新的 SSH 密钥
+ssh-keygen -t rsa -b 4096 -C "528382226@qq.com"
+# 3. 添加新的SSH密钥到ssh-agent
+ssh-add -K ~/.ssh/id_rsa
+# 4. 将新的SSH公钥添加到您的Git服务提供商 (手动操作)
+## ~/.ssh/id_rsa.pub 文件并复制其中的内容
+# 5. 验证是否配置好了. 如果类似返回 successful 类的字, 表示配置完成
+ssh -T git@gitee.com
+
+----
+
+.git仓库替换提交仓库/提交方式
+[source, shell]
+----
+git remote rm origin
+git remote add origin git@github.com:username/repository.git
+----
+
+
+=== 安装jdk
+
+[%collapsible, title="安装脚本: 安装JDK8"]
+====
+.安装JDK8
+[source, shell]
+----
+# 切换到安装目录 /usr/local
+cd /usr/local/src
+# 下载jdk8
+wget https://repo.huaweicloud.com/java/jdk/8u151-b12/jdk-8u151-linux-x64.tar.gz
+# 解压
+tar -zxvf jdk-8u151-linux-x64.tar.gz
+# 重命名
+mv jdk1.8.0_151 ../jdk8
+# 配置 path 环境变量
+echo "export JAVA_HOME=/usr/local/jdk8" >> /etc/profile
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+
+# 确认是否安装成功
+java -version
+
+## 配置默认JDK
+#alternatives --install /usr/bin/java java /usr/local/jdk8/bin/java 2
+#alternatives --config java
+----
+====
+
+[%collapsible, title="安装脚本: 安装JDK11"]
+====
+[source, shell]
+----
+# 切换到安装目录 /usr/local
+cd /usr/local/src
+# 下载jdk8
+wget https://repo.huaweicloud.com/java/jdk/11.0.12+7/jdk-11.0.12_linux-x64_bin.tar.gz
+# 解压
+tar -zxvf jdk-11.0.12_linux-x64_bin.tar.gz
+# 重命名
+mv jdk-11.0.12 ../jdk11
+# 配置 path 环境变量
+echo "export JAVA_HOME=/usr/local/jdk11" >> /etc/profile
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+
+# 确认是否安装成功
+java -version
+
+## 配置默认JDK
+#alternatives --install /usr/bin/java java /usr/local/jdk8/bin/java 2
+#alternatives --config java
+----
+====
+
+[%collapsible, title="安装脚本: 安装JDK17"]
+====
+[source, shell]
+----
+# 切换到安装目录 /usr/local
+cd /usr/local/src
+# 下载jdk8
+wget https://repo.huaweicloud.com/java/jdk/17.0.1+12/5575d3c70a4742be94e801f4dab6e6d1/jdk-17.0.1_linux-x64_bin.tar.gz
+# 解压
+tar -zxvf jdk-17.0.1_linux-x64_bin.tar.gz
+# 重命名
+mv jdk-17.0.1 ../jdk17
+# 配置 path 环境变量
+echo "export JAVA_HOME=/usr/local/jdk17" >> /etc/profile
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+
+# 确认是否安装成功
+java -version
+
+## 配置默认JDK
+#alternatives --install /usr/bin/java java /usr/local/jdk8/bin/java 2
+#alternatives --config java
+----
+====
+
+
+=== 安装maven
+
+[%collapsible, title="安装脚本: 安装maven"]
+====
+[source, shell]
+----
+# 配置 path 环境变量
+echo "export MAVEN_HOME=/usr/local/maven-3.8.1" >> /etc/profile
+echo "export PATH=\$PATH:\$MAVEN_HOME/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+
+# 确认是否安装成功
+java -version
+
+----
+====
+
+==== 安装 `Nexus`
+
+.安装命令
+[source, shell]
+----
+cd /opt
+wget https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+tar -zxvf latest-unix.tar.gz
+mv nexus-3.* nexus
+useradd nexus
+chown -R nexus:nexus nexus sonatype-work
+----
+
+.修改启动用户
+[source, shell]
+----
+vim /opt/nexus/bin/nexus.rc
+
+# 修改启动用户为 nexus
+[Unit]
+Description=nexus service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+ExecStart=/opt/nexus/bin/nexus start
+ExecStop=/opt/nexus/bin/nexus stop
+User=nexus
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+----
+
+.启动
+[source, shell]
+----
+systemctl start nexus
+# 查看启动状态
+systemctl status nexus
+# 配置开机启动
+systemctl enable nexus
+----
+
+.登陆 Nexus
+* 访问地址: http://<ip>:8081
+* 默认管理账户
+** 用户名: admin
+** 密码: 初始密码保存在  /opt/sonatype-work/nexus/admin.password 文件中
+
+=== 安装Docker
+
+[source, shell]
+----
+# 安装Docker
+sudo yum install -y docker
+# 设置开机启动
+systemctl enable docker
+# 启动Docker
+systemctl start docker
+# 查看Docker启动状态
+systemctl status docker
+# 配置阿里云镜像加速器
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://hvic6rha.mirror.aliyuncs.com"]
+}
+EOF
+# 重启Docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+# 查看Docker镜像加速器是否生效. 如果输出了镜像加速器地址，则说明配置成功
+docker info
+
+----
+
+=== 安装 nacos
+
+==== nacos 1.2.1
+
+==== nacos 2.1.0
+
+=== 安装``seata``
+
+=== 安装 Redis
+
+.参考地址:
+. https://www.cnblogs.com/ztxd/articles/16718761.html
+. https://blog.csdn.net/qq_35097597/article/details/134261196
+
+[source, shell]
+----
+# 切换到安装目录 /usr/local/src
+cd /usr/local/src
+# 下载 redis 7.0.9
+wget https://download.redis.io/releases/redis-7.0.9.tar.gz
+# 解压
+tar -zxvf redis-7.0.9.tar.gz
+# 进入redis目录
+cd redis-7.0.9
+# 编译
+make
+# 安装
+make install PREFIX=/usr/local/redis
+# 配置 path 环境变量
+echo "export PATH=\$PATH:/usr/local/redis/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+# 确认是否安装成功
+redis-server --version
+# 将redis.conf拷贝到/usr/local/redis/bin/redis.conf
+cp redis.conf /usr/local/redis/bin/redis.conf
+# 手动修改redis.conf文件
+# 1. 修改 daemonize 为 yes    # 后台运行
+# 2. 修改 bind 0.0.0.0       # 允许远程连接
+# 3. 其他的自行修改
+
+# 由 systemd 管理 redis 服务
+echo "[Unit] \
+Description=redis-server\
+After=network.target \
+[Service] \
+Type=forking \
+# ExecStart需要按照实际情况修改成自己的地址 \
+ExecStart=/usr/local/redis/bin/redis-server /usr/local/redis/bin/redis.conf \
+PrivateTmp=true \
+[Install] \
+WantedBy=multi-user.target \
+" > /usr/lib/systemd/system/redis.service
+
+# 开机自动启动
+systemctl enable redis.service
+# 启动redis服务
+systemctl start redis.service
+# 查看服务状态
+systemctl status redis.service
+# 停止服务
+systemctl stop redis.service
+# 取消开机自动启动(卸载服务)
+#systemctl disabled redis.service
+
+
+----
+
+=== 安装 mysql
+
+==== mysql 8.0
+
+.Docker 安装 mysql 8.0
+[source, shell]
+----
+docker run -p 3306:3306 --name mysql8 -e MYSQL_ROOT_PASSWORD=root -d mysql:8.0
+----
+
+.安装包方式安装 mysql 8.0
+[source, shell]
+----
+datadir='/home/data/mysql8/'
+
+# 切换到安装目录 /usr/local
+cd /usr/local/src
+# 下载安装包
+wget https://dev.mysql.com/get/Downloads/MySQL-8.3/mysql-8.3.0-linux-glibc2.17-x86_64.tar.xz
+# 解压
+tar -Jxvf mysql-8.3.0-linux-glibc2.17-x86_64.tar.xz
+# 重命名
+mv mysql-8.3.0-linux-glibc2.17-x86_64 ../mysql8
+# 进入mysql目录
+cd ../mysql8
+# 配置 path 环境变量
+echo "export PATH=\$PATH:/usr/local/mysql8/bin" >> /etc/profile
+# 使配置生效
+source /etc/profile
+# 确认是否安装成功
+mysql --version
+# 创建用户组和用户
+groupadd mysql
+useradd -r -g mysql -s /bin/false mysql
+# 创建数据目录
+mkdir -p /data/mysql8_data
+# 修改目录权限
+chown -R mysql:mysql /data/mysql8_data
+# 配置文件
+tee /usr/local/etc/my.cnf <<-'EOF'
+[mysql]
+# 默认字符集
+default-character-set=utf8mb4
+[client]
+port       = 3306
+socket     = /tmp/mysql.sock
+[mysqld]
+port       = 3306
+server-id  = 3306
+user       = mysql
+socket     = /tmp/mysql.sock
+# 安装目录
+basedir    = /usr/local/mysql8
+# 数据存放目录
+datadir    = /data/mysql8_data/mysql
+log-bin    = /data/mysql8_data/mysql/mysql-bin
+innodb_data_home_dir      =/data/mysql8_data/mysql
+innodb_log_group_home_dir =/data/mysql8_data/mysql
+# 日志及进程数据的存放目录
+log-error =/data/mysql8_data/mysql/mysql.log
+pid-file  =/data/mysql8_data/mysql/mysql.pid
+# 服务端字符集
+character-set-server=utf8mb4
+lower_case_table_names=1
+autocommit =1
+##### 以上涉及文件夹明，注意修改
+skip-external-locking
+key_buffer_size = 256M
+max_allowed_packet = 1M
+table_open_cache = 1024
+sort_buffer_size = 4M
+net_buffer_length = 8K
+read_buffer_size = 4M
+read_rnd_buffer_size = 512K
+myisam_sort_buffer_size = 64M
+thread_cache_size = 128
+#query_cache_size = 128M
+tmp_table_size = 128M
+explicit_defaults_for_timestamp = true
+max_connections = 500
+max_connect_errors = 100
+open_files_limit = 65535
+binlog_format=mixed
+binlog_expire_logs_seconds =864000
+# 创建表时使用的默认存储引擎
+default_storage_engine = InnoDB
+innodb_data_file_path = ibdata1:10M:autoextend
+innodb_buffer_pool_size = 1024M
+innodb_log_file_size = 256M
+innodb_log_buffer_size = 8M
+innodb_flush_log_at_trx_commit = 1
+innodb_lock_wait_timeout = 50
+transaction-isolation=READ-COMMITTED
+[mysqldump]
+quick
+max_allowed_packet = 16M
+[myisamchk]
+key_buffer_size = 256M
+sort_buffer_size = 4M
+read_buffer = 2M
+write_buffer = 2M
+[mysqlhotcopy]
+interactive-timeout
+
+EOF
+
+# 初始化数据库
+/usr/local/mysql8/bin/mysqld  --defaults-file=/usr/local/etc/my.cnf --basedir=/usr/local/mysql8 --datadir=/data/mysql8_data/mysql --user=mysql --initialize-insecure
+
+# 启动mysql
+/usr/local/mysql8/bin/mysqld  --defaults-file=/usr/local/etc/my.cnf --basedir=/usr/local/mysql8 --datadir=/data/mysql8_data/mysql --user=mysql &
+
+----
+
+.验证是否安装成功
+[source, shell]
+----
+mysql -uroot -p
+
+----
+
+.解决mysql不让远程连接问题
+[source, mysql]
+----
+update user set host='%' where user='root';
+----
+
+=== 安装 MongoDB
+
+.Docker安装
+[source, shell]
+----
+docker run -dit --name mongo \
+-p 27017:27017 \
+-v /home/data/mongo/config/mongod.conf:/etc/mongod.conf \
+-v /home/data/mongo/data:/data/db \
+-v /home/data/mongo/logs:/var/log/mongodb \
+--restart=always  \
+mongo
+----
+
+.SystemCtl安装
+[source, shell]
+----
+# 1. 导入 MongoDB GPG 密钥：
+sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo <<EOF
+[mongodb-org-6.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
+EOF
+
+# 2. 安装 MongoDB
+sudo yum install -y mongodb-org
+
+# 3. 启动 MongoDB 并设置开机自启
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# 检查状态
+sudo systemctl status mongod
+
+# 4. 修改配置: /etc/mongod.conf
+## `bindIp`: 0.0.0.0
+
+----
+
+
+=== postgresql 15安装
+
+[source, shell]
+----
+yum clean all
+yum update -y
+yum makecache -y
+# Install the repository RPM:
+sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Install PostgreSQL:
+sudo yum install -y postgresql15-server
+
+# Optionally initialize the database and enable automatic start:
+sudo /usr/pgsql-15/bin/postgresql-15-setup initdb
+
+# 默认只允许本地连接，需要修改配置，默认路径：/var/lib/pgsql/14/data
+echo 'host    all             all             0.0.0.0/0               md5' >> /var/lib/pgsql/15/data/pg_hba.conf
+
+# 设置开启启动项，并设置为开启自行启动
+sudo systemctl enable postgresql-15
+# 启动PGSQL
+sudo systemctl start postgresql-15
+
+----
+
+=== xxl-job-admin 2.3.0 安装
+
+[source ,shell]
+----
+docker run -e PARAMS="--spring.datasource.url=jdbc:mysql://192.168.10.5:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=123456 --server.port=9900" -p 9900:9900 --name xxl-job-admin  -d xuxueli/xxl-job-admin:2.3.0
+----
+
+=== nginx 安装
+
+
+.yum安装方式
+[source, shell]
+----
+# 1. 安装 nginx
+sudo yum install epel-release -y
+sudo yum install nginx -y
+
+# 1.1 启动并设置为开机自启：
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# 1.2 检查状态
+## 访问服务器 IP（比如 http://your-server-ip），应该看到默认 Nginx 欢迎页面。
+sudo systemctl status nginx
+
+# 2. 配置 Nginx: /etc/nginx/nginx.conf
+
+# 2.1 配置 Nginx 代理: /etc/nginx/conf.d/vue-app.conf
+# server {
+#    具体配置参考示例
+# }
+
+----
+
+.具体配置示例
+[source, conf]
+----
+server {
+    listen 80;
+    server_name your-domain.com;  # 如果没有域名可以写服务器 IP
+
+    root /var/www/vue-app;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 代理 API 请求
+    location /api/ {
+        proxy_pass http://localhost:3000/;  # 假设你的后端运行在 3000 端口
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+----
+
+=== minio
+
+[%collapsible, title="minio安装脚本"]
+====
+[source, shell]
+----
+# 下载 minio
+wget https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
+
+# 给 minio 可执行权限
+chmod +x minio
+
+# 启动
+# 根据实际情况变更数据目录
+./minio server /data/minio --console-address ":9001"
+
+----
+====
+
+[%collapsible, title="minio-Docker安装脚本"]
+====
+[source, shell]
+----
+
+----
+====
+
+== ``Lanproxy``内网穿透环境搭建
+
+. github下载地址: https://github.com/ffay/lanproxy/tree/v0.1
+. 直接下载: `git clone https://github.com/ffay/lanproxy.git`
+.. 直接看``README.md``
+
+=== 注意事项
+
+. 客户端配置
+[source, properties]
+----
+# 客户端密钥
+client.key=1ccd1600371144a58937d34e50dac0c4
+ssl.enable=true
+ssl.jksPath=test.jks
+ssl.keyStorePassword=123456
+
+server.host=59.110.34.78
+
+#default ssl port is 4993, default non-ssl port is 4900
+# 如果 ssl.enable=true, 这里就填4993; 否则填 4900
+server.port=4993
+----
+
+== 安装 Jenkins
+
+=== Docker 安装
+
+[source, shell]
+----
+# 拉取 Jenkins 镜像（最新的）
+docker pull jenkins/jenkins:lts
+# 启动 Jenkins
+docker run \
+--name jenkins \
+--privileged=true \
+--restart=on-failure \
+-itd \
+-p 8080:8080 \
+-p 50000:50000 \
+-e JENKINS_OPTS='--prefix=/jenkins' \
+-e TZ='Asia/Shanghai' \
+-e JENKINS_ARGS='--prefix=/jenkins' \
+jenkins/jenkins:lts-jdk17
+
+# Jenkins (2.319.3) 或更高版本
+
+# 查看 Jenkins 密钥 fcef5de76281344eaa01576baae3a8603783fdd978839b3187695cb74840448e
+docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+----
+
+==== 访问Jenkins Web界面
+* http://your_server_ip_or_domain:8080
+
+[source,shell]
+----
+sudo yum clean all
+# 解决 Jenkins 密钥问题:
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+sudo yum install jenkins
+
+----
+
+
+==== 安装插件
+
+== 安装 ClashX
+
+* mac/win/app: https://clashnode.xyz/clash-subscribe-nodes-providers/
+* linux: https://github.com/Elegycloud/clash-for-linux-backup
+

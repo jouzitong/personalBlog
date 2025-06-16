@@ -1745,6 +1745,14 @@ ZAB 协议的运行过程主要分为以下两个阶段：
 
 === 详细描述一下Elasticsearch搜索的过程？
 
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://p0m4l8ep.mirror.aliyuncs.com"]
+}
+EOF
+
+
 .详细描述一下Elasticsearch搜索的过程？
 . 客户端向某一节点发送搜索请求
 .

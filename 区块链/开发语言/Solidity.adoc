@@ -43,9 +43,12 @@
 
 .本章学习目标
 * 了解``Solidity``的基本语法
+* 了解``Solidity``的基本类型(通过根据简单的案例巩固学习)
 * 了解开发常用的**函数**
 
 如果你是第一次接触Solidity, 建议先阅读<<./../1. 区块链技术知识.adoc#Solidity, 本章节>>内容, 该章节主要解释了Solidity的**基本概念**和环境**搭建**。
+
+=== 基本定义
 
 .基本定义
 ``Solidity``意义上的合约是代码（其 函数）和数据（其 状态）的集合， 驻留在以太坊区块链的一个特定地址。 这一行 `uint storedData;` 声明了一个名为 `storedData` 的状态变量， 类型为 `uint` （ `unsigned` `integer`，共 256 位）。 您可以把它看作是数据库中的一个槽，您可以通过调用管理数据库的代码函数来查询和改变它。 在这个例子中，合约定义了可以用来修改或检索变量值的函数 `set` 和 `get`。
@@ -97,10 +100,10 @@ function helper(uint x) pure returns (uint) {
  ** 修饰符 `public view` 表示该函数不会修改状态变量。
 
 [spdx]
-=== SPDX 许可标识符
+==== SPDX 许可标识符
 
 [pragma]
-=== 版本编译指示
+==== 版本编译指示
 
 [[types]]
 === 类型
@@ -221,15 +224,23 @@ contract IntegerConversion {
 
 官网参考: https://docs.soliditylang.org/zh-cn/latest/types.html#address[地址类型]
 
-
 .地址类型
 . `address`：20字节的以太坊地址类型，用于标识合约或外部账户。
+** `balance`：当前地址的以太币余额。
 . `address payable`：可支付的地址类型，用于接收以太币. 还有额外的函数，如 `transfer` 和 `send`。
-. `address(this)`：当前合约地址。
+** `transfer`：将以太币发送给指定地址。
+** `send`：将以太币发送给指定地址，如果失败则返回 `false`。
+** `call`：调用另一个合约的函数。
+
+.常用方法
+. `payable(address)`：将地址转换为 `address payable` 类型。
+. `address(this)`：当前合约的地址。
 
 .案例需求
 ====
-* 编写一个智能合约，接收以太币并将其发送给指定地址。
+* 编写一个智能合约代码，获取当前合约的地址
+* 查看其他地址的余额
+* 给其他地址转账
 ====
 
 .示例代码
@@ -240,7 +251,46 @@ contract IntegerConversion {
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+contract TransferContract {
+
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // 接收 ETH 的函数
+    receive() external payable {}
+
+    // 合约余额
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+
+    // 查看其他地址余额
+    function findBalance(address addr) public view returns (uint) {
+        return addr.balance;
+    }
+
+    // 合约向指定地址转账
+    function sendEther(address payable to, uint amount) public {
+        require(msg.sender == owner, "Only owner can send");
+        require(address(this).balance >= amount, "Insufficient balance");
+        to.transfer(amount);
+    }
+}
 ----
+====
+
+.操作步骤
+. 编译 & 部署合约
+. 获取``合约地址``, 并给``合约地址``转账（保证有充足的余额）
+. 调用``sendEther``函数，传入``合约地址``和``转账金额``
+
+.思考问题
+[IMPORTANT]
+====
+. `address` 和 `address payable` 本质有什么区别？从代码层面分析. <<function-modifier-note3, 答案>>
 ====
 
 [[type-string]]
@@ -254,6 +304,31 @@ pragma solidity ^0.8.0;
 
 [[type-enum]]
 ==== 枚举类型
+
+[[units]]
+=== 单位
+
+参考地址: https://docs.soliditylang.org/zh-cn/latest/units-and-global-variables.html#[单位和全局可用变量]
+
+.计量单位: Ether
+一个字面常量可以带一个后缀 `wei`， `gwei` 或 `ether` 来指定一个以太币的数量. 默认单位: `wei`。
+
+[source, solidity, lineNumbers]
+----
+assert(1 == 1 wei);
+assert(1 gwei == 1e9 wei);
+assert(1 ether == 1e18 wei);
+assert(1 ether == 1e18 gwei);
+----
+
+.时间单位
+诸如 `seconds`， `minutes`， `hours`， `days` 和 `weeks` 等 后缀在字面常量后面，可以用来指定时间单位，其中秒是基本单位，单位的考虑方式很直白：
+
+* 1 == 1 seconds
+* 1 minute = 60 seconds
+* 1 hour = 60 minutes
+* 1 day = 24 hours
+* 1 week = 7 days
 
 [[function]]
 === 函数
@@ -289,8 +364,6 @@ function functionName(parameter1, parameter2, ...) public returns (returnType) {
 . `internal`: 内部状态变量，只能在合约内部读取。
 . `private`: 私有状态变量，只能在合约内部读取。
 
-
-
 .常见的修饰符号
 * `public`: 公共函数，可以被外部调用。
 * `internal`: 内部函数，只能在合约内部调用。
@@ -319,6 +392,13 @@ function functionName(parameter1, parameter2, ...) public returns (returnType) {
 [[enum]]
 === 枚举
 
+== 特殊变量和函数
+
+官方参考地址: https://docs.soliditylang.org/zh-cn/latest/units-and-global-variables.html#special-variables-functions[特殊变量和函数]
+
+=== 区块和交易属性
+
+
 == 部署环境问题
 
 === Ganache
@@ -331,26 +411,44 @@ function functionName(parameter1, parameter2, ...) public returns (returnType) {
 
 == 深入学习 Solidity 特性
 
+=== 深究**Gas**
+
 == 项目实践和测试
 
 == 持续学习和社区参与
+
 
 [Appendix]
 == 附录: 思考问题回答
 
 [[function-modifier-note1]]
 .`view` 和 `pure` 的区别是什么？怎么去理解其中的含义?
-[NOTE]
-====
-. xx
-====
+----
+
+----
 
 [[function-modifier-note2]]
-.*合约状态* 是什么？
-----
 
-----
+[itemized]
+Q:: *合约状态* 是什么？
+A:: xxx
+
+*合约状态* 是什么？::
+[NOTE]
+====
+xxx
+====
+
+[[function-modifier-note3]]
+[qanda]
+`address` 和 `address payable` 本质有什么区别？从代码层面分析. ::
+
+[NOTE]
+====
+. `address` 是一个普通的地址类型, 不能直接发送以太币. 而 `address payable` 是一个可以发送以太币的地址类型.
+.
+
+====
 
 [Appendix]
 == 附录: 参考资料
-

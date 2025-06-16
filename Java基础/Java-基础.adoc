@@ -1,0 +1,41 @@
+= {toc-title}
+:author: JouZiton
+:doctype: book
+:encoding: UTF-8
+:lang: zh-CN
+:numbered: 编号
+:stem: latexmath
+:icons: font
+:source-highlighter: coderay
+:sectnums:
+:sectlinks:
+:sectnumlevels: 4
+:toc: left
+:toc-title: Java-基础
+:toclevels: 4
+
+[perfer]
+== 前言
+
+== 基础
+
+== 多线程
+
+.本章节学习目标
+* 掌握多线程用法和常用的方法
+* 掌握多线程之间的通信、同步等问题
+* 掌握锁机制
+* 掌握线程池的使用
+
+== IO编程
+
+.本章节学习目标
+
+
+
+== JVM
+
+
+
+[Appendix-1]
+== 附录
